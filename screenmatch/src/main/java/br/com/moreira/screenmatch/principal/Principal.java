@@ -8,10 +8,9 @@ import br.com.moreira.screenmatch.service.ConsumoAPI;
 import br.com.moreira.screenmatch.service.ConverteDados;
 import ch.qos.logback.core.encoder.JsonEscapeUtil;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Scanner;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class Principal {
@@ -59,11 +58,67 @@ public class Principal {
         System.out.println("===========================================");
         System.out.println();
 
+        List<Episodio> episodio = temporadas.stream()
+                .flatMap(t -> t.episodio().stream()
+                        .map(d -> new Episodio(t.numero(),d))
+                ) .collect(Collectors.toList());
+
+        episodio.forEach(System.out::println);
+
         List<Episodio> episodios = temporadas.stream()
                 .flatMap(t -> t.episodio().stream()
                         .map(d -> new Episodio(t.numero(),d))
                 ) .collect(Collectors.toList());
 
         episodios.forEach(System.out::println);
+
+
+
+        System.out.println();
+        System.out.println("===========================================");
+        System.out.println("A partir de que ano você deseja ver os episodios? ");
+        var ano = leitura.nextInt();
+        leitura.nextLine();
+
+        LocalDate dataBusca = LocalDate.of(ano,1,1);
+
+        DateTimeFormatter formatador = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+
+        episodios.stream()
+                .filter(e -> e.getDatalancamento() != null && e.getDatalancamento().isAfter(dataBusca))
+                .filter( filme -> filme.getAvaliacao() >= 3.0)
+
+                .forEach(e -> System.out.println(
+                        "Temporada: " + e.getTemporada() +
+                                " Episódio: " + e.getTitulo() +
+                                " Avaliacao: " + e.getAvaliacao() +
+                                " Data Lancamento: " + e.getDatalancamento().format(formatador)
+                ));
+
+           // Busca por avaliações
+
+        System.out.println();
+        System.out.println("===========================================");
+        System.out.println("Avaliação Detalhada: ");
+        System.out.println("===========================================");
+        System.out.println();
+        Map<Integer, Double> avaliacoesPorTemporada = episodios.stream()
+                .filter(e -> e.getAvaliacao() > 0.0)
+                .collect(Collectors.groupingBy(Episodio::getTemporada,Collectors.averagingDouble(Episodio::getAvaliacao)));
+        System.out.println(avaliacoesPorTemporada);
+
+        DoubleSummaryStatistics estatistica = episodios.stream()
+                .filter(e -> e.getAvaliacao() > 0.0)
+                .collect(Collectors.summarizingDouble(Episodio::getAvaliacao));
+        System.out.println("Média: " + estatistica.getAverage());
+        System.out.println("Melhor episódio: " + estatistica.getMax());
+        System.out.println("Pior episódio: " + estatistica.getMin());
+        System.out.println("Quantidade: " + estatistica.getCount());
+
+
+
+
+
+
     }
 }
